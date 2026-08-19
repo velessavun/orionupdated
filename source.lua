@@ -468,10 +468,25 @@ local NotificationHolder = SetProps(
 
 function OrionLib:MakeNotification(NotificationConfig)
 	spawn(function()
+		NotificationConfig = NotificationConfig or {}
+
 		NotificationConfig.Name = NotificationConfig.Name or "Notification"
 		NotificationConfig.Content = NotificationConfig.Content or "Test"
 		NotificationConfig.Image = NotificationConfig.Image or "rbxassetid://4384403532"
 		NotificationConfig.Time = NotificationConfig.Time or 15
+
+		-- Notification sound
+		local NotificationSound = Instance.new("Sound")
+		NotificationSound.Name = "OrionNotificationSound"
+		NotificationSound.SoundId = "rbxassetid://17208361335"
+		NotificationSound.Volume = 1
+		NotificationSound.Parent = game:GetService("SoundService")
+
+		NotificationSound:Play()
+
+		NotificationSound.Ended:Connect(function()
+			NotificationSound:Destroy()
+		end)
 
 		local NotificationParent = SetProps(MakeElement("TFrame"), {
 			Size = UDim2.new(1, 0, 0, 0),
@@ -497,6 +512,7 @@ function OrionLib:MakeNotification(NotificationConfig)
 			),
 			{
 				MakeElement("Stroke", Color3.fromRGB(93, 93, 93), 1.2),
+
 				MakeElement("Padding", 12, 12, 12, 12),
 
 				SetProps(MakeElement("Image", NotificationConfig.Image), {
@@ -532,7 +548,10 @@ function OrionLib:MakeNotification(NotificationConfig)
 			}
 		):Play()
 
-		wait(NotificationConfig.Time - 0.88)
+		-- Prevent negative wait times for very short notifications
+		local FadeDelay = math.max(NotificationConfig.Time - 0.88, 0)
+
+		wait(FadeDelay)
 
 		TweenService:Create(
 			NotificationFrame.Icon,
@@ -587,10 +606,16 @@ function OrionLib:MakeNotification(NotificationConfig)
 		)
 
 		wait(1.35)
+
 		NotificationFrame:Destroy()
+
+		-- Clean up the sound if it is still around
+		if NotificationSound and NotificationSound.Parent then
+			NotificationSound:Destroy()
+		end
 	end)
 end
-
+		
 function OrionLib:Init()
 	if OrionLib.SaveCfg then
 		pcall(function()
